@@ -2,21 +2,19 @@
 
 A tool that hands a Claude Code chat's coding work off to a second, always-on computer.
 
-You chat in the Claude Code desktop app on your Mac. For each chat you choose where its coding work runs: on the Mac, or on another machine that stays on (today, a Windows PC with its own Claude login). That machine does the work in its own git worktree, opens a pull request, and you watch, steer and merge from the same chat. The Mac can sleep, its usage stays low, and nothing the other machine does touches your working folder.
-
-> **About the name.** "Flex Rig" is just the quirky name the author gave their always-on PC, and the tool's name came from that. Everywhere this README, the bar and the skill say "Flex Rig", read it as "my other computer". Nothing depends on the name. See [Using your own name](#using-your-own-name) to relabel it with whatever you call your machine.
+You chat in the Claude Code desktop app on your Mac. For each chat you choose where its coding work runs: on the Mac, or on your other machine that stays on (today, a Windows PC with its own Claude login). That machine does the work in its own git worktree, opens a pull request, and you watch, steer and merge from the same chat. The Mac can sleep, its usage stays low, and nothing the other machine does touches your working folder.
 
 ![The Code work bar in its three states](docs/code-work-bar.svg)
 
-*An illustration of the bar. Replace it with a real screenshot if you like.*
+*An illustration of the bar. Wherever it says "Flex Rig", yours shows the name you give your machine (see [Naming your machine](#naming-your-machine)).*
 
 ## What's in the box
 
 | Part | What it does |
 |---|---|
-| **Code work bar** (`code-work/`) | A Claude Code desktop mod: a band above the prompt. For each chat, pick **Mac** (do the work here) or the remote machine (labelled "Flex Rig" by default; yours can be called anything). Also pick the remote machine's model and effort, see an online light and a live "working on…" line, and use **Stop**, **View**, **Open PR** and **Merge**. A side panel shows the remote task's conversation and lets you message it. A new chat's first message waits until you pick a machine. While the Mac only waits, its check-ins run on Haiku to save usage. |
-| **flex-rig skill** (`skill/`) | `flexrig.sh` and a `SKILL.md` that teach Claude to send a task to the remote machine over SSH. It first pushes your local edits to a branch (never `main`), waits in 2.5-minute foreground calls so the chat shows "working", relays your messages to the running task, fetches what it made (screenshots, HTML pages, CSV, PDF), and merges. |
-| **Runner** (`runner/`) | `flexrig.mjs` runs on the remote PC. It runs each task in its own git worktree with the PC's own Claude login, gives it a hidden test browser and a way to start the app it built, and opens a PR. |
+| **Code work bar** (`code-work/`) | A Claude Code desktop mod: a band above the prompt. For each chat, pick **Mac** (do the work here) or your other machine. Also pick the other machine's model and effort, see an online light and a live "working on…" line, and use **Stop**, **View**, **Open PR** and **Merge**. A side panel shows the remote task's conversation and lets you message it. A new chat's first message waits until you pick a machine. While the Mac only waits, its check-ins run on Haiku to save usage. |
+| **flex-rig skill** (`skill/`) | `flexrig.sh` and a `SKILL.md` that teach Claude to send a task to your other machine over SSH. It first pushes your local edits to a branch (never `main`), waits in 2.5-minute foreground calls so the chat shows "working", relays your messages to the running task, fetches what it made (screenshots, HTML pages, CSV, PDF), and merges. |
+| **Runner** (`runner/`) | `flexrig.mjs` runs on the other machine. It runs each task in its own git worktree with that machine's own Claude login, gives it a hidden test browser and a way to start the app it built, and opens a PR. |
 | **Routing rule** (`mac/flex-rig-rule.md`) | A short rule installed in `~/.claude/rules/` that makes Claude follow the bar. |
 | **Repo sync** (`mac/repo-sync.sh`) | A LaunchAgent that keeps `main` up to date in every repo in your repos folder. It never stashes, resets, commits or deletes. |
 
@@ -64,26 +62,24 @@ It installs the bar, the rule and the skill on the Mac, copies the runner to the
 ## Use it
 
 - **Pick a machine** with the buttons in the bar, or type `/code-work mac` or `/code-work flex`. The pick is per chat.
-- **Just ask Claude for coding work.** With the bar on Flex Rig, Claude writes a brief, pushes your local edits, and starts the task on the PC. The line under the buttons shows what it is doing.
+- **Just ask Claude for coding work.** With the bar pointed at your other machine, Claude writes a brief, pushes your local edits, and starts the task on the PC. The line under the buttons shows what it is doing.
 - **Steer it:** type a message in the chat (it reaches the PC within about 2.5 minutes), or use **View** to open the side panel and message it right away.
 - **When it finishes:** use **Open PR** to look, **Merge** to ask Claude to merge it and update your Mac's folder.
-- **Offline PC:** the bar's light goes grey and Claude does the work on the Mac instead.
+- **Machine offline:** the bar's light goes grey and Claude does the work on the Mac instead.
 
 Anything you see in Claude's chat you can also run yourself. `flexrig.sh` with no arguments prints every command (`start`, `say`, `wait`, `followup`, `merge`, `status`, `stop`, `preview`, `takeover`, `ask`, …).
 
-If a task's test browser hits a sign-in page it stops and says so. Open the PC over Remote Desktop, double-click **Flex Rig browser sign-in** on its desktop, sign in once, and close the window.
+If a task's test browser hits a sign-in page it stops and says so. Open the other machine over Remote Desktop, double-click **Flex Rig browser sign-in** on its desktop, sign in once, and close the window.
 
-## Using your own name
+## Naming your machine
 
-The labels "Flex Rig" and "Mac" are only text. To call your remote machine something else (say "Desk PC" or "Build Box"), replace the two-word phrase everywhere, then reinstall:
+In the Code work bar, the side panel and Claude's notes, your other machine is labelled **Flex Rig** by default. To show your own name instead (say "Desk PC" or "Build Box"), set it in `~/.flexrig/config`:
 
 ```bash
-cd flex-rig
-grep -rl "Flex Rig" --exclude-dir=.git --exclude=README.md . | xargs sed -i '' 's/Flex Rig/Desk PC/g'     # on Linux, drop the '' after -i
-bash install.sh
+FLEXRIG_NAME="Desk PC"
 ```
 
-That changes what the bar, the skill and the notes to Claude say, and the tests still pass because they get the same replacement. Leave the one-word names `flexrig`, `flex-rig` and `~/.flexrig` alone: those are file, folder and command names, not labels. (If you want the slash command to match, it is `/code-work mac` and `/code-work flex`; the word after it only needs to start with `flex`, `rig`, `pc` or `windows`.)
+Open a new chat and the bar reads "Mac ⟶ Desk PC", the status line says "Desk PC is working on…", and Claude is told to send work to "Desk PC". The name is only a label. The commands, folders and files keep their names (`flexrig.sh`, `~/.flexrig`).
 
 ## Settings
 
@@ -93,6 +89,7 @@ All settings live in `~/.flexrig/config`:
 |---|---|
 | `FLEXRIG_HOST` | `user@address` of the PC (required) |
 | `FLEXRIG_LOCAL_REPOS` / `FLEXRIG_REMOTE_REPOS` | the folder holding your repos on the Mac / on the PC |
+| `FLEXRIG_NAME` | what your other machine is called in the bar (default "Flex Rig") |
 | `FLEXRIG_DEFAULT_REPO` | the repo a task goes to when you don't name one |
 | `FLEXRIG_AREA_REPOS` | repos (colon-separated) that hold many apps, where `--area <folder>` is required |
 | `FLEXRIG_REMOTE_HOME` | only if the PC user's home isn't `C:\Users\<user>` |

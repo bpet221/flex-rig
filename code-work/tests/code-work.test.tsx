@@ -455,3 +455,29 @@ test('while the Mac only waits on Flex Rig, its checks go to Haiku; anything els
   expect(onlyWaiting([results('go'), wait(still, 'flexrig.sh start --title x "brief"'), results()])).toBe(false)                     // the brief
   expect(onlyWaiting([results('go'), { role: 'assistant', text: '', toolUses: [] }])).toBe(false)
 })
+
+test('FLEXRIG_NAME in the config relabels the remote machine in the bar, the notes to Claude and the panel', async ($, on) => {
+  on('command.register', () => ({ value: { command: 'code-work' } }))
+  on('session.start', (_: unknown, e: { cwd: string }) => ({ cwd: e.cwd }))
+  on('process.run', () => ({ value: { exitCode: 0, stdout: '', stderr: '' } }))
+  on('env.get', () => ({ value: '/Users/test' }))
+  on('session.id', () => ({ value: 'chat-1' }))
+  on('session.messages', () => ({ value: [] }))
+  on('fs.read', (_: unknown, e: { path: string }) => { if (e.path.endsWith('/.flexrig/config')) return { value: 'FLEXRIG_HOST="u@192.0.2.10"\nFLEXRIG_NAME="Desk PC"\n' }; throw new Error('no file') })
+  const seen: (readonly string[] | undefined)[] = []
+  on('prompt.submit', (_, e) => { seen.push(e.context); return { text: e.text, context: e.context } })
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await new Promise((r) => setTimeout(r, 20))
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect(await ui.find({ key: 'code-work-flex-rig' })).toBeTruthy()
+  await ui.unmount()
+  const flip = await $.command.run({ command: 'code-work', args: 'mac' })
+  const back = await $.command.run({ command: 'code-work', args: 'flex' })
+  expect(flip.text).toContain('this Mac')
+  expect(back.text).toContain('Desk PC')
+  expect(back.text).not.toContain('Flex Rig')
+  await $.prompt.submit({ text: 'fix it' })
+  const n = seen[seen.length - 1]?.join(' ') ?? ''
+  expect(n).toContain('Desk PC')
+  expect(n).not.toContain('Flex Rig')
+})

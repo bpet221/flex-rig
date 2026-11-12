@@ -166,16 +166,25 @@ const refreshFiles = async ($: EngineInterface): Promise<void> => {
 // ---------- can the Mac reach Flex Rig? ----------
 // A 2-second knock on Flex Rig's SSH port, every 30 seconds. Away from the PC's network (or with the PC off) it
 // answers "offline", and Claude does the work on the Mac instead of waiting on a PC it can't reach.
+// The remote machine's label: FLEXRIG_NAME in ~/.flexrig/config (default "Flex Rig"). Every user-facing "Flex Rig"
+// below goes through L(), so the bar, the panel and the notes to Claude use the name you gave your machine.
+let RIG = 'Flex Rig'
+const L = (text: string): string => text.split('Flex Rig').join(RIG)
 let host = ''
 let checking = false
-const flexHost = async ($: EngineInterface): Promise<string> => {
-  if (host) return host
+// Reads ~/.flexrig/config: FLEXRIG_HOST="user@address" and the optional FLEXRIG_NAME="Desk PC".
+const loadConfig = async ($: EngineInterface): Promise<void> => {
   try {
     const p = await paths($)
-    const src = await $.fs.read(p.config)   // ~/.flexrig/config: FLEXRIG_HOST="user@address"
+    const src = await $.fs.read(p.config)
     const m = src.match(/^FLEXRIG_HOST=["']?(?:[^@"'\s]*@)?([A-Za-z0-9._-]+)["']?/m)
     host = m ? m[1] : ''
+    const n = src.match(/^FLEXRIG_NAME=(?:"([^"\n]{1,24})"|'([^'\n]{1,24})'|([^\s#"']{1,24}))/m)
+    RIG = (n && (n[1] ?? n[2] ?? n[3] ?? '').trim()) || 'Flex Rig'
   } catch { host = '' }
+}
+const flexHost = async ($: EngineInterface): Promise<string> => {
+  if (!host) await loadConfig($)
   return host
 }
 const checkOnline = async ($: EngineInterface): Promise<void> => {
@@ -203,7 +212,7 @@ const MAC_ONLY = 'Only steps that touch the Mac itself stay on the Mac whatever 
 // The user had the bar on Flex Rig and the Mac chat still edited the setup's own sources itself, reading "the Mac's own setup" as covering
 // the repo sources of it. Say plainly that repo edits are coding work, wherever the files end up installed.
 const REPO_EDITS = "Editing files in any repo is coding work and goes to Flex Rig, including the sources of this Mac setup (the flex-rig rule, the flex-rig skill and flexrig.sh, this code-work mod, repo-sync.sh, the install scripts); the Mac only merges and runs the installer afterwards, and never edits the installed copies in ~/.claude by hand."
-export const noteFor = (b: Bar, reach: Online, list: readonly ModelChoice[], effortKnown: boolean): string => {
+const noteForRaw = (b: Bar, reach: Online, list: readonly ModelChoice[], effortKnown: boolean): string => {
   if (b.machine === 'mac') {
     return "Code work: this Mac (the user's Code work bar above the prompt). Do this chat's coding work here on the Mac, in a worktree; don't send it to Flex Rig unless the user asks."
   }
@@ -226,6 +235,7 @@ export const noteFor = (b: Bar, reach: Online, list: readonly ModelChoice[], eff
     MAC_ONLY,
   ].join(' ')
 }
+export const noteFor = (b: Bar, reach: Online, list: readonly ModelChoice[], effortKnown: boolean): string => L(noteForRaw(b, reach, list, effortKnown))
 const note = async ($: EngineInterface): Promise<string> =>
   noteFor(await readBar($), await read($, online), await read($, models), effortSeen)
 
@@ -297,7 +307,7 @@ const pullPanel = async ($: EngineInterface, pick?: string | null): Promise<void
     let j: PanelAnswer | null = null
     try { j = JSON.parse((r?.stdout ?? '').trim().split('\n').pop() ?? '') as PanelAnswer } catch { j = null }
     if (!j || j.ok !== true) {
-      if (cur.error === null) await update($, panel, (old) => ({ ...old, error: "Can't reach Flex Rig right now." }))
+      if (cur.error === null) await update($, panel, (old) => ({ ...old, error: L("Can't reach Flex Rig right now.") }))
       return
     }
     const t = j.run ?? null
@@ -310,7 +320,7 @@ const pullPanel = async ($: EngineInterface, pick?: string | null): Promise<void
   } catch { /* the next tick tries again */ } finally { pulling = false }
 }
 const openPanel = async ($: EngineInterface, run?: string | null): Promise<void> => {
-  await $.ui.open({ id: PANE, title: 'Flex Rig' }).catch(() => undefined)
+  await $.ui.open({ id: PANE, title: L('Flex Rig') }).catch(() => undefined)
   void pullPanel($, run)
 }
 // Every few seconds while the panel is the one shown: often while something works, seldom otherwise.
@@ -389,9 +399,10 @@ export const register: Register = on => {
     // Each command on its own, and a refusal only noted: a name Claude Code refuses (the panel's was once
     // /flex-rig, which the flex-rig skill owns) threw out this whole hook, so no timer started: no online
     // light, no "working on" line, no model list. Nothing below may depend on a command.
-    for (const c of COMMANDS) await $.command.register(c).catch((err) => diag($, `command /${c.name}`, err))
+    for (const c of COMMANDS) await $.command.register({ ...c, description: L(c.description) }).catch((err) => diag($, `command /${c.name}`, err))
     const started = await next(e)
     effortSeen = false
+    await loadConfig($)   // the host to knock on, and what to call it, before anything is drawn
     // The timers first: the online light, Flex Rig's progress and the panel all hang on them.
     try {
       $.clock.every(5000, () => { void refresh($); void release($) })   // what `flexrig.sh wait` writes; a held first message
@@ -438,14 +449,14 @@ export const register: Register = on => {
     await choose($, m, true)
     const off = m === 'flex-rig' && (await read($, online)) === 'offline'
     return {
-      text: `Code work: ${NAME[m]}. This chat's coding work now goes to ${m === 'mac' ? 'this Mac' : 'Flex Rig'}.${off ? " Flex Rig is offline right now, so it'll run on the Mac until it's back." : ''}`,
+      text: L(`Code work: ${L(NAME[m])}. This chat's coding work now goes to ${m === 'mac' ? 'this Mac' : 'Flex Rig'}.${off ? " Flex Rig is offline right now, so it'll run on the Mac until it's back." : ''}`),
       context: [await note($)],
     }
   })
 
   on('command.run', { command: PANEL_COMMAND }, async ($) => {
     await openPanel($, (await read($, status))?.run)
-    return { text: 'Flex Rig panel opened.' }
+    return { text: L('Flex Rig panel opened.') }
   })
 
   on('prompt.submit', async ($, e, next) => {
@@ -455,7 +466,7 @@ export const register: Register = on => {
       if (msgs && !msgs.some((x) => x.role === 'assistant')) {
         const resend = !e.attachments?.length
         await update($, held, () => ({ text: e.text, resend }))
-        return { drop: resend ? HOLD_REASON : RESEND_REASON }
+        return { drop: L(resend ? HOLD_REASON : RESEND_REASON) }
       }
     }
     await saveBar($).catch(() => undefined)
@@ -515,7 +526,7 @@ export const register: Register = on => {
       await update($, confirmStop, () => false)
       const p = await paths($)
       const r = await run(['/bin/bash', p.script, 'stop', s.run])
-      $.ui.toast(r && r.exitCode === 0 ? (r.stdout.trim().split('\n').pop() || 'Stopped Flex Rig.') : "Couldn't stop Flex Rig from here.")
+      $.ui.toast(r && r.exitCode === 0 ? (r.stdout.trim().split('\n').pop() || L('Stopped Flex Rig.')) : L("Couldn't stop Flex Rig from here."))
     }
     const openPr = async () => {
       if (!s?.pr) return
@@ -525,7 +536,7 @@ export const register: Register = on => {
     const merge = async () => {
       if (!s?.pr) return
       await update($, dismissed, () => s.run)
-      void $.prompt.submit({ text: `Merge the Flex Rig PR ${s.pr} (flexrig.sh merge ${s.run}), then deploy if it needs it.` })
+      void $.prompt.submit({ text: L(`Merge the Flex Rig PR ${s.pr} (flexrig.sh merge ${s.run}), then deploy if it needs it.`) })
     }
 
     // A pill or chip: a bordered Box hugging one plain Button. All four paddings are set so the desktop adds
@@ -542,7 +553,7 @@ export const register: Register = on => {
       const picked = m === x
       const color = x === 'flex-rig' ? (off ? MUTED : CLAY) : BLUE
       const lit = picked && !(x === 'flex-rig' && off)
-      const label = x === 'flex-rig' && reach === 'offline' ? 'Flex Rig · offline' : NAME[x]
+      const label = x === 'flex-rig' && reach === 'offline' ? L('Flex Rig · offline') : L(NAME[x])
       const showDot = !Svg && x === 'flex-rig' && reach !== 'unknown'   // the terminal has no icon to carry the light
       return (
         <Box
@@ -555,7 +566,7 @@ export const register: Register = on => {
           alignItems="center"
           {...pad(PILL_Y, Svg ? 1 : 0)}
         >
-          {Svg ? <Svg key={`code-work-icon-${x}`} source={iconSvg(x, picked ? 'currentColor' : MUTED, reach)} alt={x === 'mac' ? 'Mac' : reach === 'unknown' ? 'Flex Rig' : `Flex Rig ${reach}`} width={14} height={14} /> : null}
+          {Svg ? <Svg key={`code-work-icon-${x}`} source={iconSvg(x, picked ? 'currentColor' : MUTED, reach)} alt={x === 'mac' ? 'Mac' : reach === 'unknown' ? L('Flex Rig') : L(`Flex Rig ${reach}`)} width={14} height={14} /> : null}
           {showDot ? <Text key="code-work-dot" color={reach === 'online' ? GREEN : MUTED}>{reach === 'online' ? '●' : '○'}</Text> : null}
           <Button key={`code-work-${x}`} label={label} plain dimColor={picked ? undefined : true} hover={{ backgroundColor: CLEAR }} onPress={() => void setMachine(x)} />
         </Box>
@@ -589,7 +600,7 @@ export const register: Register = on => {
         <Box flexDirection="row" flexWrap="wrap" alignItems="center" gap={1} rowGap={desk ? ROW_GAP : 0}>
           {end('mac')}
           {Svg ? (
-            <Svg key="code-work-line" source={lineSvg(m, reach, working, lineW)} alt={flex ? (off ? 'Flex Rig offline: work stays on the Mac' : 'to Flex Rig') : 'stays on the Mac'} width={lineW} height={12} isInteractive={working ? true : undefined} />
+            <Svg key="code-work-line" source={lineSvg(m, reach, working, lineW)} alt={flex ? (off ? L('Flex Rig offline: work stays on the Mac') : L('to Flex Rig')) : 'stays on the Mac'} width={lineW} height={12} isInteractive={working ? true : undefined} />
           ) : (
             <Text color={flex && !off ? CLAY : LINE}>{flex && !off ? '─────▶' : off ? '─ ─ ─ ' : '──────'}</Text>
           )}
@@ -600,13 +611,13 @@ export const register: Register = on => {
         {waiting ? (
           <Box key="code-work-hold" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1} paddingLeft={desk ? 0.5 : 1}>
             <Text size="caption" color={CLAY}>●</Text>
-            {statusText(waiting.resend ? 'Where should this chat\'s coding work go? Pick Mac or Flex Rig: your message sends then.' : 'Where should this chat\'s coding work go? Pick Mac or Flex Rig, then send your message again.', CLAY)}
+            {statusText(waiting.resend ? L('Where should this chat\'s coding work go? Pick Mac or Flex Rig: your message sends then.') : L('Where should this chat\'s coding work go? Pick Mac or Flex Rig, then send your message again.'), CLAY)}
           </Box>
         ) : null}
         {working && s ? (
           <Box key="code-work-status" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1} paddingLeft={desk ? 0.5 : 1}>
             {Svg ? <Svg key="code-work-status-dot" source={DOT_SVG} alt="working" width={8} height={8} isInteractive /> : <Text color={CLAY}>●</Text>}
-            {statusText(s.title ? `Flex Rig is working on: ${s.title}` : 'Flex Rig is working')}
+            {statusText(s.title ? L(`Flex Rig is working on: ${s.title}`) : L('Flex Rig is working'))}
             <Text size="caption" color={MUTED} tabular>
               {`· ${s.elapsedMin} min · step ${s.steps}${s.model ? ` · ${modelLabel(normalizeModel(s.model), list)}` : ''}${s.effort ? ` · ${effortLabel(s.effort)}` : ''}`}
             </Text>
@@ -618,7 +629,7 @@ export const register: Register = on => {
         {done && s ? (
           <Box key="code-work-done" flexDirection="row" flexWrap="wrap" alignItems="center" gap={1} paddingLeft={desk ? 0.5 : 1}>
             <Text size="caption" color={GREEN}>✓</Text>
-            {statusText(s.title ? `Flex Rig finished: ${s.title}` : 'Flex Rig finished')}
+            {statusText(s.title ? L(`Flex Rig finished: ${s.title}`) : L('Flex Rig finished'))}
             {chip('code-work-view-done', 'View', () => void openPanel($, s.run))}
             {chip('code-work-open-pr', 'Open PR', () => void openPr())}
             {chip('code-work-merge', 'Merge', () => void merge())}
@@ -652,7 +663,7 @@ export const register: Register = on => {
       const p = await paths($)
       const r = await $.process.run(['/bin/bash', p.script, 'say', pn.run, t], { timeoutMs: 30_000 }).catch(() => null)
       const said = (r?.stdout.trim().split('\n').pop() || r?.stderr.trim().split('\n').pop() || '').trim()
-      $.ui.toast(r && r.exitCode === 0 ? 'Sent to Flex Rig.' : said || "Couldn't send it to Flex Rig.")
+      $.ui.toast(r && r.exitCode === 0 ? L('Sent to Flex Rig.') : said || L("Couldn't send it to Flex Rig."))
       void pullPanel($)
     }
     const line = (row: PanelRow) => {
@@ -677,7 +688,7 @@ export const register: Register = on => {
       <Box flexDirection="column" gap={desk ? 1.2 : 1}>
         {pn.error ? <Text key="flex-rig-error" size="caption" color={MUTED}>{pn.error}</Text> : null}
         <Box key="flex-rig-runs" flexDirection="column">
-          {runs.length === 0 && !pn.error ? <Text key="flex-rig-none" size="caption" color={MUTED}>{lastPull ? 'No Flex Rig tasks yet.' : 'Asking Flex Rig…'}</Text> : null}
+          {runs.length === 0 && !pn.error ? <Text key="flex-rig-none" size="caption" color={MUTED}>{lastPull ? L('No Flex Rig tasks yet.') : L('Asking Flex Rig…')}</Text> : null}
           {runs.map((r) => (
             <Box key={`flex-rig-run-${r.id}`} flexDirection="row" alignItems="center" gap={1}>
               <Text color={markColor(r.state)}>{mark(r.state)}</Text>
@@ -690,7 +701,7 @@ export const register: Register = on => {
           {panelRows(pn.items).map(line)}
         </Box>
         {live ? (
-          <Input key="flex-rig-say" placeholder="Message Flex Rig while it works" submitLabel="Send" onSubmit={(v: string) => void send(v)} />
+          <Input key="flex-rig-say" placeholder={L("Message Flex Rig while it works")} submitLabel="Send" onSubmit={(v: string) => void send(v)} />
         ) : pn.run ? (
           <Text key="flex-rig-over" size="caption" color={MUTED}>This task is over. Send a follow-up from the chat.</Text>
         ) : null}

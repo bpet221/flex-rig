@@ -17,5 +17,9 @@ FLEXRIG_DEFAULT_REPO="my-project"
 # insists on --area <folder> so only edits in that folder get pushed along with the task.
 FLEXRIG_AREA_REPOS=""
 
+# Optional. What your other machine is called. This is the label the Code work bar, its side panel and the
+# notes to Claude show wherever they refer to it (up to 24 characters). Default: "Flex Rig".
+# FLEXRIG_NAME="Desk PC"
+
 # Optional. Only change these if your Windows home is not C:\Users\<windows-user>.
 # FLEXRIG_REMOTE_HOME='C:\Users\your-windows-user'
