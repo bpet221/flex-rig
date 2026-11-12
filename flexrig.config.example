@@ -1,0 +1,21 @@
+# Flex Rig settings. The installer copies this file to ~/.flexrig/config (on the Mac) the first time
+# you run it. Edit the copy, not this one. It is a plain shell file: one NAME="value" per line.
+
+# The PC that runs the coding tasks: "windows-user@address". The address is its IP or hostname
+# as the Mac sees it (a name from ~/.ssh/config will not work for the bar's online light).
+# You must be able to run `ssh windows-user@address` from the Mac without typing a password (key login).
+FLEXRIG_HOST="your-windows-user@192.168.1.50"
+
+# Where your git repos live, one folder per repo, on each machine. Use the same folder names on both.
+FLEXRIG_LOCAL_REPOS="$HOME/Code"
+FLEXRIG_REMOTE_REPOS='C:\Users\your-windows-user\Code'
+
+# The repo a task goes to when you don't say --repo (a folder name inside the repos folder).
+FLEXRIG_DEFAULT_REPO="my-project"
+
+# Optional. Repos that hold many separate apps, separated by colons. For these, `flexrig.sh start`
+# insists on --area <folder> so only edits in that folder get pushed along with the task.
+FLEXRIG_AREA_REPOS=""
+
+# Optional. Only change these if your Windows home is not C:\Users\<windows-user>.
+# FLEXRIG_REMOTE_HOME='C:\Users\your-windows-user'

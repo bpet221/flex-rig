@@ -1,0 +1,9 @@
+{
+  "name": "code-work",
+  "version": "0.7.0",
+  "description": "The Code work bar above the prompt: send this chat's coding work to Flex Rig or keep it on the Mac, see whether Flex Rig can be reached (offline means the Mac does it), pick its model and effort, and stop, open or merge its work. A side panel (/flex-rig-panel, or View on the bar) shows Flex Rig's tasks and the live conversation of one, with a box to message it while it works.",
+  "author": {
+    "name": "flex-rig contributors"
+  },
+  "types": "./types/index.d.ts"
+}

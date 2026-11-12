@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+*.log
+tsconfig.json
+# your own settings never belong in the repo
+.flexrig/
+config
+.env
+.env.*
+*.pem
+*.key

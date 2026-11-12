@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 270" width="760" height="270" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>The Code work bar: an illustration of its three states</title>
+  <rect width="760" height="270" rx="14" fill="#1F1E1D"/>
+  <!-- state 1: working -->
+  <text x="24" y="30" fill="#A3A198" font-size="12">While Flex Rig works on a task</text>
+  <rect x="24" y="40" width="712" height="74" rx="10" fill="#FFFFFF" fill-opacity="0.06"/>
+  <rect x="38" y="50" width="62" height="28" rx="14" fill="none" stroke="#3A3935"/>
+  <text x="69" y="69" fill="#A3A198" font-size="14" text-anchor="middle">Mac</text>
+  <line x1="104" y1="64" x2="160" y2="64" stroke="#D97757" stroke-width="2" stroke-dasharray="4 6">
+    <animate attributeName="stroke-dashoffset" from="20" to="0" dur="1s" repeatCount="indefinite"/>
+  </line>
+  <path d="M158 59 l8 5 l-8 5" fill="none" stroke="#D97757" stroke-width="2"/>
+  <rect x="170" y="50" width="96" height="28" rx="14" fill="#D97757" fill-opacity="0.13" stroke="#D97757"/>
+  <circle cx="188" cy="64" r="4" fill="#7FB77E"/>
+  <text x="200" y="69" fill="#F5F4EE" font-size="14">Flex Rig</text>
+  <rect x="282" y="52" width="104" height="24" rx="8" fill="#FFFFFF" fill-opacity="0.07" stroke="#3A3935"/>
+  <text x="294" y="69" fill="#F5F4EE" font-size="13">Opus 5.5  ⌄</text>
+  <rect x="396" y="52" width="86" height="24" rx="8" fill="#FFFFFF" fill-opacity="0.07" stroke="#3A3935"/>
+  <text x="408" y="69" fill="#F5F4EE" font-size="13">High  ⌄</text>
+  <text x="38" y="102" fill="#A3A198" font-size="12">Flex Rig is working on: fixing the save button   ·   3 min   ·   step 12</text>
+  <circle cx="470" cy="98" r="2" fill="#D97757"><animate attributeName="opacity" values="1;.2;1" dur="1.2s" repeatCount="indefinite"/></circle>
+  <circle cx="478" cy="98" r="2" fill="#D97757"><animate attributeName="opacity" values="1;.2;1" dur="1.2s" begin=".2s" repeatCount="indefinite"/></circle>
+  <circle cx="486" cy="98" r="2" fill="#D97757"><animate attributeName="opacity" values="1;.2;1" dur="1.2s" begin=".4s" repeatCount="indefinite"/></circle>
+  <rect x="610" y="86" width="52" height="22" rx="11" fill="none" stroke="#3A3935"/>
+  <text x="636" y="101" fill="#A3A198" font-size="12" text-anchor="middle">View</text>
+  <rect x="670" y="86" width="52" height="22" rx="11" fill="none" stroke="#3A3935"/>
+  <text x="696" y="101" fill="#A3A198" font-size="12" text-anchor="middle">Stop</text>
+
+  <!-- state 2: done -->
+  <text x="24" y="148" fill="#A3A198" font-size="12">When it finishes with a pull request</text>
+  <rect x="24" y="158" width="712" height="42" rx="10" fill="#FFFFFF" fill-opacity="0.06"/>
+  <rect x="38" y="165" width="62" height="28" rx="14" fill="none" stroke="#3A3935"/>
+  <text x="69" y="184" fill="#A3A198" font-size="14" text-anchor="middle">Mac</text>
+  <path d="M104 179 h56 M152 174 l8 5 l-8 5" fill="none" stroke="#3A3935" stroke-width="2"/>
+  <rect x="170" y="165" width="96" height="28" rx="14" fill="#D97757" fill-opacity="0.13" stroke="#D97757"/>
+  <circle cx="188" cy="179" r="4" fill="#7FB77E"/>
+  <text x="200" y="184" fill="#F5F4EE" font-size="14">Flex Rig</text>
+  <text x="290" y="184" fill="#7FB77E" font-size="13">Done</text>
+  <rect x="520" y="168" width="64" height="22" rx="11" fill="none" stroke="#3A3935"/>
+  <text x="552" y="183" fill="#A3A198" font-size="12" text-anchor="middle">View</text>
+  <rect x="592" y="168" width="72" height="22" rx="11" fill="none" stroke="#3A3935"/>
+  <text x="628" y="183" fill="#A3A198" font-size="12" text-anchor="middle">Open PR</text>
+  <rect x="672" y="168" width="52" height="22" rx="11" fill="none" stroke="#7FB77E"/>
+  <text x="698" y="183" fill="#7FB77E" font-size="12" text-anchor="middle">Merge</text>
+
+  <!-- state 3: offline -->
+  <text x="24" y="226" fill="#A3A198" font-size="12">When the PC can't be reached (the work stays on the Mac)</text>
+  <rect x="24" y="234" width="712" height="26" rx="10" fill="#FFFFFF" fill-opacity="0.06"/>
+  <circle cx="44" cy="247" r="4" fill="#6B6A63"/>
+  <text x="56" y="251" fill="#A3A198" font-size="12">Flex Rig is offline · work stays on the Mac</text>
+</svg>
