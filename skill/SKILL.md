@@ -5,7 +5,7 @@ description: Send coding tasks to Flex Rig (an always-on Windows PC), watch prog
 
 # Flex Rig handoff
 
-Flex Rig = an always-on Windows 11 PC (address and user in `FLEXRIG_HOST` in `~/.flexrig/config`; key login from this Mac over SSH, so same network or VPN). Its Claude Code uses its own login (typically a second plan). Repos live in the folder named by `FLEXRIG_REMOTE_REPOS` on the PC and `FLEXRIG_LOCAL_REPOS` on the Mac, with the same folder names on both. Notes: the flex-rig repo's README.
+"Flex Rig" is just the name given to the remote machine that does the work (call yours whatever you like). Flex Rig = an always-on Windows 11 PC (address and user in `FLEXRIG_HOST` in `~/.flexrig/config`; key login from this Mac over SSH, so same network or VPN). Its Claude Code uses its own login (typically a second plan). Repos live in the folder named by `FLEXRIG_REMOTE_REPOS` on the PC and `FLEXRIG_LOCAL_REPOS` on the Mac, with the same folder names on both. Notes: the flex-rig repo's README.
 
 Script: `~/.claude/skills/flex-rig/flexrig.sh` (source: `skill/` in the flex-rig repo; install or update with `install.sh` at the top of that repo).
 
